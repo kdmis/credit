@@ -1,8 +1,7 @@
 let sampleData = [];
-
+let filteredData = [];
 let currentPage = 1;
 const rowsPerPage = 20;
-let filteredData = [];
 
 const updateCurrentDate = () => {
   const now = new Date();
@@ -11,7 +10,7 @@ const updateCurrentDate = () => {
 };
 
 const updatePendingCount = () => {
-  document.getElementById('pending-count').textContent = sampleData.length;
+  document.getElementById('pending-count').textContent = filteredData.length;
 };
 
 const renderTable = () => {
@@ -33,16 +32,15 @@ const renderTable = () => {
   for (let i = startIndex; i < endIndex; i++) {
     const row = filteredData[i];
     const tr = document.createElement('tr');
-	tr.innerHTML = `
-	  <td>${row.AcNo}</td>
-	  <td>${row.FormNo}</td>
-	  <td>${row.Name}</td>
-	  <td><span class="status-badge status-pending">Pending</span></td>
-	  <td>
-	    <button class="action-button done-button" onclick="markAsDone('${row.AcNo}', '${row.FormNo}')">Done</button>
-	  </td>
-	`;
-
+    tr.innerHTML = `
+      <td>${row.AcNo}</td>
+      <td>${row.FormNo}</td>
+      <td>${row.Name}</td>
+      <td><span class="status-badge status-pending">Pending</span></td>
+      <td>
+        <button class="action-button done-button" onclick="markAsDone('${row.AcNo}', '${row.FormNo}')">Done</button>
+      </td>
+    `;
     tableBody.appendChild(tr);
   }
 
@@ -75,72 +73,41 @@ const updatePagination = () => {
   nextButton.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
 };
 
-// Modified handleSearch function
 const handleSearch = () => {
   const searchInput = document.getElementById('search-input');
-  if (!searchInput) {
-    console.error('Search input element not found');
-    return;
-  }
-  
-  searchInput.addEventListener('input', (e) => {
-    const searchTerm = e.target.value.toLowerCase().trim();
-    if (searchTerm === '') {
+  const searchButton = document.getElementById('search-button');
+
+  const performSearch = (searchTerm) => {
+    if (!searchTerm) {
       filteredData = [...sampleData];
     } else {
-      filteredData = sampleData.filter(row => {
-        // Convert values to strings safely before using toLowerCase()
-        const name = String(row.Name || '').toLowerCase();
-        const formNo = String(row.FormNo || '').toLowerCase();
-        const acNo = String(row.AcNo || '');
-        
-        return name.includes(searchTerm) || 
-               formNo.includes(searchTerm) || 
-               acNo.includes(searchTerm);
-      });
+      const lowerSearch = searchTerm.toLowerCase();
+      filteredData = sampleData.filter(row =>
+        String(row.Name || '').toLowerCase().includes(lowerSearch) ||
+        String(row.FormNo || '').toLowerCase().includes(lowerSearch) ||
+        String(row.AcNo || '').includes(lowerSearch)
+      );
     }
     currentPage = 1;
     renderTable();
+  };
+
+  searchInput.addEventListener('input', (e) => {
+    performSearch(e.target.value.trim());
   });
-  
-  // Add support for search button click and Enter key press
-  const searchButton = document.getElementById('search-button'); // Assuming you have a search button
-  if (searchButton) {
-    searchButton.addEventListener('click', () => {
-      const searchTerm = searchInput.value.toLowerCase().trim();
-      performSearch(searchTerm);
-    });
-  }
-  
-  // Add Enter key support
+
   searchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      const searchTerm = searchInput.value.toLowerCase().trim();
-      performSearch(searchTerm);
+      performSearch(searchInput.value.trim());
     }
   });
-};
 
-// Helper function to perform search
-const performSearch = (searchTerm) => {
-  if (searchTerm === '') {
-    filteredData = [...sampleData];
-  } else {
-    filteredData = sampleData.filter(row => {
-      // Convert values to strings safely before using toLowerCase()
-      const name = String(row.Name || '').toLowerCase();
-      const formNo = String(row.FormNo || '').toLowerCase();
-      const acNo = String(row.AcNo || '');
-      
-      return name.includes(searchTerm) || 
-             formNo.includes(searchTerm) || 
-             acNo.includes(searchTerm);
+  if (searchButton) {
+    searchButton.addEventListener('click', () => {
+      performSearch(searchInput.value.trim());
     });
   }
-  currentPage = 1;
-  renderTable();
 };
-
 
 const initEventListeners = () => {
   document.getElementById('prev-page').addEventListener('click', () => {
@@ -164,10 +131,10 @@ const fetchData = async () => {
   loader.style.display = 'block';
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycby8XEcXvhv4W6FO4R4mk4A4Epf0-YnLoQcCjOLCJAtMGEax1CPTEFyCywXMudTZ4brU/exec'); // 👈 Insert your Apps Script or API URL here
+    const response = await fetch('https://script.google.com/macros/s/AKfycby8XEcXvhv4W6FO4R4mk4A4Epf0-YnLoQcCjOLCJAtMGEax1CPTEFyCywXMudTZ4brU/exec');
     const data = await response.json();
 
-    sampleData = data || [];
+    sampleData = Array.isArray(data) ? data : [];
     filteredData = [...sampleData];
     updatePendingCount();
     renderTable();
@@ -180,7 +147,7 @@ const fetchData = async () => {
   }
 };
 
-async function markAsDone(acNo, formNo) {
+const markAsDone = async (acNo, formNo) => {
   const loaderModal = document.getElementById('done-loader-modal');
   loaderModal.classList.add('active');
 
@@ -197,41 +164,22 @@ async function markAsDone(acNo, formNo) {
       })
     });
 
-    const text = await response.text();
-    console.log("Raw response text:", text);
-
-    let result = {};
-    try {
-      result = JSON.parse(text);
-    } catch (jsonError) {
-      console.error('Invalid JSON returned from server:', jsonError);
-      alert('File Marked as Filled Successfully');
-      return;
-    }
-
-    if (result.success) {
-      alert(`Form No. ${formNo} marked as done successfully!`);
-      sampleData = sampleData.filter(row => row.FormNo !== formNo);
-      filteredData = filteredData.filter(row => row.FormNo !== formNo);
-      renderTable();
-      updatePendingCount();
-    } else {
-      alert(`Failed to mark as done: ${result.message || 'Unknown error'}`);
-    }
+    alert(`Form No. ${formNo} marked as done successfully!`);
+    sampleData = sampleData.filter(row => row.FormNo !== formNo);
+    filteredData = filteredData.filter(row => row.FormNo !== formNo);
+    renderTable();
+    updatePendingCount();
   } catch (error) {
     console.error('Error marking as done:', error);
     alert('Network or server error. Please try again.');
   } finally {
     loaderModal.classList.remove('active');
   }
-}
+};
 
-
-
-// Make sure handleSearch is called after DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   updateCurrentDate();
   initEventListeners();
-  handleSearch(); // This should now work properly
+  handleSearch();
   fetchData();
 });
