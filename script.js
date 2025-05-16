@@ -164,7 +164,7 @@ const fetchData = async () => {
   loader.style.display = 'block';
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbx73CMmpDCceskHIFORGMzAIARmM1nA4v8Jz1F5s6sMr_-u5t7GT83zYbrqjWNkASg_XA/exec'); // 👈 Insert your Apps Script or API URL here
+    const response = await fetch('https://script.google.com/macros/s/AKfycby8XEcXvhv4W6FO4R4mk4A4Epf0-YnLoQcCjOLCJAtMGEax1CPTEFyCywXMudTZ4brU/exec'); // 👈 Insert your Apps Script or API URL here
     const data = await response.json();
 
     sampleData = data || [];
@@ -185,7 +185,7 @@ async function markAsDone(acNo, formNo) {
   loaderModal.classList.add('active');
 
   try {
-    const response = await fetch('https://script.google.com/macros/s/AKfycbx73CMmpDCceskHIFORGMzAIARmM1nA4v8Jz1F5s6sMr_-u5t7GT83zYbrqjWNkASg_XA/exec', {
+    const response = await fetch('https://script.google.com/macros/s/AKfycby8XEcXvhv4W6FO4R4mk4A4Epf0-YnLoQcCjOLCJAtMGEax1CPTEFyCywXMudTZ4brU/exec', {
       method: 'POST',
       mode: 'no-cors',
       headers: {
